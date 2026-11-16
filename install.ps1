@@ -1,39 +1,38 @@
+param(
+    [string]$Repository = $env:MPT_GITHUB_REPO
+)
 $ErrorActionPreference = 'Stop'
 
-$repo = 'idinaxyc/mpt.mp'
-$asset = 'mpt-mp-windows-x86_64.zip'
-$url = "https://github.com/$repo/releases/latest/download/$asset"
-$tempDir = Join-Path ([IO.Path]::GetTempPath()) ([IO.Path]::GetRandomFileName())
+if ([string]::IsNullOrWhiteSpace($Repository)) {
+    $Repository = Read-Host 'GitHub repository (owner/name)'
+}
+if ($Repository -notmatch '^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$') {
+    throw 'Invalid repository. Expected owner/name.'
+}
+if (-not [Environment]::Is64BitOperatingSystem) {
+    throw 'The published Windows build currently targets 64-bit Windows.'
+}
+
+$asset = 'mpt-mp-windows-x86_64.exe'
+$url = "https://github.com/$Repository/releases/latest/download/$asset"
 $installDir = Join-Path $env:LOCALAPPDATA 'Programs\mpt.mp'
+$destination = Join-Path $installDir 'mpt-mp.exe'
+$tempFile = Join-Path ([IO.Path]::GetTempPath()) ([IO.Path]::GetRandomFileName())
 
 try {
-    New-Item -ItemType Directory -Force -Path $tempDir | Out-Null
-    $archive = Join-Path $tempDir 'release.zip'
-    Invoke-WebRequest -Uri $url -OutFile $archive
-    Expand-Archive -LiteralPath $archive -DestinationPath $tempDir -Force
-
-    $binary = Join-Path $tempDir 'mpt-mp.exe'
-    if (-not (Test-Path $binary)) {
-        throw 'The release archive does not contain mpt-mp.exe.'
-    }
-
     New-Item -ItemType Directory -Force -Path $installDir | Out-Null
-    Copy-Item -Force $binary (Join-Path $installDir 'mpt-mp.exe')
-    $plugins = Join-Path $tempDir 'plugins'
-    $installedPlugins = Join-Path $installDir 'plugins'
-    if (Test-Path $plugins) {
-        if (Test-Path $installedPlugins) { Remove-Item -Recurse -Force $installedPlugins }
-        Copy-Item -Recurse $plugins $installedPlugins
-    }
+    Invoke-WebRequest -Uri $url -OutFile $tempFile
+    Move-Item -Force $tempFile $destination
+} finally {
+    if (Test-Path $tempFile) { Remove-Item -Force $tempFile }
+}
 
-    $userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
-    $entries = @($userPath -split ';' | Where-Object { $_ })
-    if ($entries -notcontains $installDir) {
-        [Environment]::SetEnvironmentVariable('Path', (($entries + $installDir) -join ';'), 'User')
-        Write-Host 'Added mpt.mp to your user PATH. Open a new terminal.'
-    }
-    Write-Host "mpt.mp installed to $installDir"
+$userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
+$pathEntries = @($userPath -split ';' | Where-Object { $_ })
+if ($pathEntries -notcontains $installDir) {
+    $newPath = (@($pathEntries) + $installDir) -join ';'
+    [Environment]::SetEnvironmentVariable('Path', $newPath, 'User')
+    Write-Host 'Added the installation directory to your user PATH. Open a new terminal to use it.'
 }
-finally {
-    if (Test-Path $tempDir) { Remove-Item -Recurse -Force $tempDir }
-}
+Write-Host "mpt.mp installed to: $destination"
+Write-Host 'You can launch it from the Start menu search or run: mpt-mp'

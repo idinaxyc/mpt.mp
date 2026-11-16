@@ -1,36 +1,47 @@
 #!/usr/bin/env bash
+# Install the latest mpt.mp Linux x86_64 release into ~/.local/bin.
 set -euo pipefail
 
-REPO="idinaxyc/mpt.mp"
-ASSET="mpt-mp-linux-x86_64.tar.gz"
-BASE="https://github.com/${REPO}/releases/latest/download/${ASSET}"
-TMP="$(mktemp -d)"
-trap 'rm -rf "$TMP"' EXIT
-
-command -v curl >/dev/null 2>&1 || { echo "curl is required." >&2; exit 1; }
-[[ "$(uname -s)" == "Linux" ]] || { echo "This installer supports Linux only." >&2; exit 1; }
-[[ "$(uname -m)" == "x86_64" ]] || { echo "Only Linux x86_64 builds are currently published." >&2; exit 1; }
-
-curl -fL --retry 3 "$BASE" -o "$TMP/release.tar.gz"
-mkdir -p "$TMP/unpacked"
-tar -xzf "$TMP/release.tar.gz" -C "$TMP/unpacked"
-
-BIN="$TMP/unpacked/mpt-mp"
-[[ -f "$BIN" ]] || { echo "The release archive does not contain mpt-mp." >&2; exit 1; }
-
-APP_DIR="$HOME/.local/opt/mpt.mp"
-BIN_DIR="$HOME/.local/bin"
-mkdir -p "$APP_DIR" "$BIN_DIR"
-rm -rf "$APP_DIR/plugins"
-install -m 0755 "$BIN" "$APP_DIR/mpt-mp"
-if [[ -d "$TMP/unpacked/plugins" ]]; then
-  cp -R "$TMP/unpacked/plugins" "$APP_DIR/plugins"
+REPOSITORY="${MPT_GITHUB_REPO:-${1:-}}"
+if [[ -z "$REPOSITORY" ]]; then
+  read -r -p "GitHub repository (owner/name): " REPOSITORY
 fi
-ln -sfn "$APP_DIR/mpt-mp" "$BIN_DIR/mpt-mp"
+if [[ ! "$REPOSITORY" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]]; then
+  echo "Invalid repository. Expected owner/name." >&2
+  exit 1
+fi
 
-echo "mpt.mp installed."
-echo "Run: $BIN_DIR/mpt-mp"
-case ":$PATH:" in
-  *":$BIN_DIR:"*) ;;
-  *) echo "Add ~/.local/bin to PATH if the command is not found." ;;
+if [[ "$(uname -s)" != "Linux" ]]; then
+  echo "This installer is for Linux." >&2
+  exit 1
+fi
+ARCH="$(uname -m)"
+if [[ "$ARCH" != "x86_64" ]]; then
+  echo "Unsupported architecture: $ARCH (the published build currently targets x86_64)." >&2
+  exit 1
+fi
+
+ASSET="mpt-mp-linux-x86_64"
+URL="https://github.com/${REPOSITORY}/releases/latest/download/${ASSET}"
+DEST_DIR="${HOME}/.local/bin"
+DEST="${DEST_DIR}/mpt-mp"
+mkdir -p "$DEST_DIR"
+TMP="$(mktemp)"
+trap 'rm -f "$TMP"' EXIT
+
+if command -v curl >/dev/null 2>&1; then
+  curl -fL --retry 3 "$URL" -o "$TMP"
+elif command -v wget >/dev/null 2>&1; then
+  wget -O "$TMP" "$URL"
+else
+  echo "Please install curl or wget and try again." >&2
+  exit 1
+fi
+
+install -m 0755 "$TMP" "$DEST"
+echo "mpt.mp installed to: $DEST"
+case ":${PATH}:" in
+  *":${DEST_DIR}:"*) echo "Run it with: mpt-mp" ;;
+  *) echo "Add this to your shell profile: export PATH=\"\$HOME/.local/bin:\$PATH\"" ;;
 esac
+echo "Linux audio runtime: install your distribution's ALSA runtime package if it is missing (for example, libasound2)."

@@ -1,0 +1,103 @@
+{
+  "id": "lan-sync",
+  "name": "SyncIt!",
+  "version": "0.1.0",
+  "api": 1,
+  "description": "LAN sync: current track, queue, position, volume, theme, playlists and track files.",
+  "author": "mpt.mp",
+  "license": "MIT",
+  "permissions": [
+    "player.read",
+    "player.control",
+    "library.read",
+    "library.write",
+    "settings.read",
+    "settings.write"
+  ],
+  "run": {
+    "command": [
+      "python3",
+      "main.py"
+    ]
+  },
+  "settings": [
+    {
+      "key": "token",
+      "type": "string",
+      "label": "Shared token (same on all devices, 8+ characters)",
+      "default": ""
+    },
+    {
+      "key": "device_name",
+      "type": "string",
+      "label": "Device name (empty = hostname)",
+      "default": ""
+    },
+    {
+      "key": "port",
+      "type": "int",
+      "label": "Port (TCP for sync, UDP for discovery; restart needed)",
+      "default": 47821,
+      "min": 1024,
+      "max": 65535
+    },
+    {
+      "key": "peers",
+      "type": "string",
+      "label": "Manual addresses: 192.168.1.5:47821, ... (if discovery fails)",
+      "default": ""
+    },
+    {
+      "key": "sync_playback",
+      "type": "bool",
+      "label": "Sync track, queue, position, pause",
+      "default": true
+    },
+    {
+      "key": "sync_volume",
+      "type": "bool",
+      "label": "Sync volume",
+      "default": true
+    },
+    {
+      "key": "sync_theme",
+      "type": "bool",
+      "label": "Sync theme",
+      "default": true
+    },
+    {
+      "key": "sync_playlists",
+      "type": "bool",
+      "label": "Sync playlists (union)",
+      "default": true
+    },
+    {
+      "key": "share_files",
+      "type": "bool",
+      "label": "Share track files with other devices",
+      "default": true
+    },
+    {
+      "key": "download_missing",
+      "type": "bool",
+      "label": "Download missing tracks",
+      "default": true
+    },
+    {
+      "key": "download_dir",
+      "type": "path",
+      "label": "Download folder (empty = 'mpt-sync' inside the first library folder)",
+      "default": ""
+    }
+  ],
+  "commands": [
+    {
+      "name": "sync_now",
+      "label": "Sync now"
+    },
+    {
+      "name": "peers",
+      "label": "Show devices"
+    }
+  ]
+}

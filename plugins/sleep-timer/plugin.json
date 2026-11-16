@@ -1,0 +1,18 @@
+{
+  "id": "sleep-timer",
+  "name": "Sleep Timer",
+  "version": "0.1.0",
+  "api": 1,
+  "description": "Pauses playback after N minutes.",
+  "author": "mpt.mp",
+  "license": "MIT",
+  "permissions": ["player.control"],
+  "run": { "command": ["python3", "main.py"] },
+  "settings": [
+    { "key": "minutes", "type": "int", "label": "Minutes until pause", "default": 30, "min": 0, "max": 480 }
+  ],
+  "commands": [
+    { "name": "start", "label": "Start timer" },
+    { "name": "cancel", "label": "Cancel" }
+  ]
+}

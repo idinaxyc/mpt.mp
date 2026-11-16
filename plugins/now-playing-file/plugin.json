@@ -1,0 +1,17 @@
+{
+  "id": "now-playing-file",
+  "name": "Now Playing File",
+  "version": "0.1.0",
+  "api": 1,
+  "description": "Writes the current track to a text file — for status bars, OBS and scripts.",
+  "author": "mpt.mp",
+  "license": "MIT",
+  "permissions": ["player.read"],
+  "run": { "command": ["python3", "main.py"] },
+  "settings": [
+    { "key": "output", "type": "path", "label": "File", "default": "~/.cache/mpt-now-playing.txt" },
+    { "key": "template", "type": "string", "label": "Template ({artist}, {title}, {album})", "default": "{artist} — {title}" },
+    { "key": "clear_on_pause", "type": "bool", "label": "Clear file on pause", "default": true }
+  ],
+  "commands": []
+}

@@ -1,0 +1,17 @@
+# Example mpt.mp theme. Save as ~/mpt.mp/theme.toml or point MPT_THEME at it.
+# Any key may be omitted: the built-in palette value is kept.
+# Colors are "#rrggbb". Black (#000000) counts as "not set".
+
+name = "My theme"              # optional: descriptive name exposed to plugins
+
+darker_background = "#181d20"  # window background
+dark_background   = "#21272c"  # panels (top, bottom, side)
+background        = "#2d353b"  # cards, selected items
+lighter_background = "#343f44" # hover highlight
+selection         = "#3d484d"  # borders
+foreground        = "#d3c6aa"  # main text
+light_foreground  = "#9da9a0"  # muted text
+accent            = "#7fbbb3"  # accent: selected, enabled, active track
+magenta           = "#d699b6"  # second accent: plugin permissions
+red               = "#e67e80"  # errors
+yellow            = "#dbbc7f"  # warnings

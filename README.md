@@ -38,9 +38,11 @@ irm https://raw.githubusercontent.com/idinaxyc/mpt.mp/main/install.ps1 | iex
 
 ## Сборка из исходников
 
-В репозитории пока хранится исходный проект в архиве `mpt-mp-alpha.zip`. GitHub Actions распаковывает его во время сборки. Для локальной сборки распакуйте архив, перейдите в каталог с `Cargo.toml` и выполните:
+Исходный код находится прямо в корне репозитория. Для локальной сборки клонируйте проект и выполните:
 
 ```bash
+git clone https://github.com/idinaxyc/mpt.mp.git
+cd mpt.mp
 cargo build --locked --release
 cargo test --locked
 ```

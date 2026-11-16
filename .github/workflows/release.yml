@@ -7,11 +7,11 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   build:
-    name: Build
+    name: Build (${{ matrix.os }})
     strategy:
       fail-fast: false
       matrix:
@@ -23,60 +23,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-
-      - name: Extract source archive
-        shell: bash
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          from zipfile import ZipFile
-          archive = Path("mpt-mp-alpha.zip")
-          if not archive.exists():
-              raise SystemExit("mpt-mp-alpha.zip is missing from the repository")
-          with ZipFile(archive) as z:
-              names = z.namelist()
-              cargo = next((n for n in names if n.rstrip("/").endswith("Cargo.toml")), None)
-              if cargo is None:
-                  raise SystemExit("Cargo.toml was not found inside mpt-mp-alpha.zip")
-              prefix = cargo.rsplit("/", 1)[0] + "/" if "/" in cargo else ""
-              excluded = {"target", "data", "plugin-data", "synced", "imports", "exports", "debug", ".git", ".github"}
-              out = Path("source")
-              out.mkdir(exist_ok=True)
-              for info in z.infolist():
-                  name = info.filename
-                  if not name.startswith(prefix):
-                      continue
-                  rel = name[len(prefix):].rstrip("/")
-                  if not rel or rel.split("/", 1)[0] in excluded:
-                      continue
-                  if rel in {"mpt.mp", ".rustc_info.json", "README.md", ".gitignore", "LICENSE"} or rel.endswith("/.rustc_info.json"):
-                      continue
-                  dest = (out / rel).resolve()
-                  if out.resolve() not in dest.parents and dest != out.resolve():
-                      raise SystemExit(f"Unsafe archive path: {name}")
-                  if info.is_dir():
-                      dest.mkdir(parents=True, exist_ok=True)
-                  else:
-                      dest.parent.mkdir(parents=True, exist_ok=True)
-                      dest.write_bytes(z.read(info))
-          if not Path("source/Cargo.toml").exists():
-              raise SystemExit("Source extraction did not produce source/Cargo.toml")
-          PY
-
-      - name: Extract source files into repository root
-        shell: bash
-        run: |
-          cp -a source/. .
-          rm -rf source
-          git add -A
-          if ! git diff --cached --quiet; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git commit -m "Extract mpt.mp source tree"
-            if [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
-              git push
-            fi
-          fi
 
       - name: Install Linux audio build dependency
         if: runner.os == 'Linux'

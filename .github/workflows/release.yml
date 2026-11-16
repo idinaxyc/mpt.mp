@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -39,7 +39,7 @@ jobs:
               if cargo is None:
                   raise SystemExit("Cargo.toml was not found inside mpt-mp-alpha.zip")
               prefix = cargo.rsplit("/", 1)[0] + "/" if "/" in cargo else ""
-              excluded = {"target", "data", "plugin-data", "synced", "imports", "exports", "debug", ".git"}
+              excluded = {"target", "data", "plugin-data", "synced", "imports", "exports", "debug", ".git", ".github"}
               out = Path("source")
               out.mkdir(exist_ok=True)
               for info in z.infolist():
@@ -49,7 +49,7 @@ jobs:
                   rel = name[len(prefix):].rstrip("/")
                   if not rel or rel.split("/", 1)[0] in excluded:
                       continue
-                  if rel in {"mpt.mp", ".rustc_info.json"} or rel.endswith("/.rustc_info.json"):
+                  if rel in {"mpt.mp", ".rustc_info.json", "README.md", ".gitignore", "LICENSE"} or rel.endswith("/.rustc_info.json"):
                       continue
                   dest = (out / rel).resolve()
                   if out.resolve() not in dest.parents and dest != out.resolve():
@@ -63,6 +63,21 @@ jobs:
               raise SystemExit("Source extraction did not produce source/Cargo.toml")
           PY
 
+      - name: Extract source files into repository root
+        shell: bash
+        run: |
+          cp -a source/. .
+          rm -rf source
+          git add -A
+          if ! git diff --cached --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "Extract mpt.mp source tree"
+            if [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
+              git push
+            fi
+          fi
+
       - name: Install Linux audio build dependency
         if: runner.os == 'Linux'
         run: |
@@ -75,11 +90,9 @@ jobs:
           workspaces: source -> target
 
       - name: Run Rust tests
-        working-directory: source
         run: cargo test --locked -- --test-threads=1
 
       - name: Build release binary
-        working-directory: source
         run: cargo build --locked --release
 
       - name: Package Linux build
@@ -87,10 +100,10 @@ jobs:
         shell: bash
         run: |
           mkdir -p package
-          cp source/target/release/mpt-mp package/mpt-mp
-          if [ -d source/plugins ]; then cp -R source/plugins package/plugins; fi
+          cp target/release/mpt-mp package/mpt-mp
+          if [ -d plugins ]; then cp -R source/plugins package/plugins; fi
           for f in README.md plugins.md LICENSE; do
-            if [ -f "source/$f" ]; then cp "source/$f" package/; fi
+            if [ -f "$f" ]; then cp "source/$f" package/; fi
           done
           tar -czf "${{ matrix.archive }}" -C package .
 
@@ -99,10 +112,10 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force package | Out-Null
-          Copy-Item source/target/release/mpt-mp.exe package/mpt-mp.exe
-          if (Test-Path source/plugins) { Copy-Item source/plugins package/plugins -Recurse }
+          Copy-Item target/release/mpt-mp.exe package/mpt-mp.exe
+          if (Test-Path plugins) { Copy-Item plugins package/plugins -Recurse }
           foreach ($file in @('README.md', 'plugins.md', 'LICENSE')) {
-            if (Test-Path "source/$file") { Copy-Item "source/$file" package/ }
+            if (Test-Path $file) { Copy-Item $file package/ }
           }
           Compress-Archive -Path package/* -DestinationPath "${{ matrix.archive }}"
 

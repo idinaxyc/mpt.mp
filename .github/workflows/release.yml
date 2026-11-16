@@ -86,8 +86,6 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: source -> target
 
       - name: Run Rust tests
         run: cargo test --locked -- --test-threads=1
@@ -101,9 +99,9 @@ jobs:
         run: |
           mkdir -p package
           cp target/release/mpt-mp package/mpt-mp
-          if [ -d plugins ]; then cp -R source/plugins package/plugins; fi
+          if [ -d plugins ]; then cp -R plugins package/plugins; fi
           for f in README.md plugins.md LICENSE; do
-            if [ -f "$f" ]; then cp "source/$f" package/; fi
+            if [ -f "$f" ]; then cp "$f" package/; fi
           done
           tar -czf "${{ matrix.archive }}" -C package .
 
